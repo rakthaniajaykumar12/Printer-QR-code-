@@ -1,3 +1,4 @@
+
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field
@@ -70,12 +71,16 @@ class OrderOwnerResponse(BaseModel):
 
 
 class OrderUpdateStatusRequest(BaseModel):
-    status: Optional[str] = Field(None, pattern="^(new|ready|printed|cancelled)$")
-    payment_status: Optional[str] = Field(None, pattern="^(unpaid|paid)$")
+    status: Optional[str] = Field(
+        None, pattern="^(new|ready|printed|cancelled)$"
+    )
+    payment_status: Optional[str] = Field(
+        None, pattern="^(unpaid|paid)$"
+    )
     notes: Optional[str] = None
 
 
-# Owner Auth Schemas
+# Owner Authentication Schemas
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -89,6 +94,23 @@ class TokenResponse(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     old_password: str
+    new_password: str = Field(..., min_length=6)
+
+
+# Set security answers while authenticated
+class SetSecurityAnswersRequest(BaseModel):
+    favorite_color: str = Field(..., min_length=1, max_length=100)
+    favorite_animal: str = Field(..., min_length=1, max_length=100)
+    favorite_person: str = Field(..., min_length=1, max_length=100)
+    current_password: str
+
+
+# Forgot password request
+class ForgotPasswordRequest(BaseModel):
+    username: str
+    favorite_color: str
+    favorite_animal: str
+    favorite_person: str
     new_password: str = Field(..., min_length=6)
 
 

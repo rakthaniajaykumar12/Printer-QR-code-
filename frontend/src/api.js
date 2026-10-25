@@ -1,6 +1,9 @@
 // API client with standard error handling and token management
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'https://printer-qr-backend.onrender.com').replace(/\/+$/, '') + '/api';
+export const API_BASE = (
+  import.meta.env.VITE_API_URL ||
+  'https://printer-qr-backend.onrender.com'
+).replace(/\/+$/, '') + '/api';
 
 export function getAuthToken() {
   return localStorage.getItem('smart_xerox_token');
@@ -16,14 +19,17 @@ export function setAuthToken(token) {
 
 async function request(endpoint, options = {}) {
   const token = getAuthToken();
+
   const headers = options.headers ? { ...options.headers } : {};
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
-  // Do not set Content-Type if body is FormData
-  if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+  if (
+    !(options.body instanceof FormData) &&
+    !headers['Content-Type']
+  ) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -39,19 +45,27 @@ async function request(endpoint, options = {}) {
 
   if (!response.ok) {
     let errorDetail = 'An error occurred';
+
     try {
       const errData = await response.json();
-      errorDetail = errData.detail || errData.message || JSON.stringify(errData);
+      errorDetail =
+        errData.detail ||
+        errData.message ||
+        JSON.stringify(errData);
     } catch {
       errorDetail = `Server responded with error status ${response.status}`;
     }
+
     throw new Error(errorDetail);
   }
 
-  // Handle binary/file downloads
-  if (response.headers.get('content-type')?.includes('application/octet-stream') ||
-      response.headers.get('content-type')?.includes('application/pdf') ||
-      response.headers.get('content-type')?.includes('image/')) {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (
+    contentType.includes('application/octet-stream') ||
+    contentType.includes('application/pdf') ||
+    contentType.includes('image/')
+  ) {
     return response.blob();
   }
 
@@ -60,20 +74,18 @@ async function request(endpoint, options = {}) {
 
 // Public API
 export const api = {
-  // Public rates
   getPublicRates: () => request('/orders/current-rates'),
 
-  // Submit order
   submitOrder: (formData) =>
     request('/orders', {
       method: 'POST',
       body: formData,
     }),
 
-  // Track order
-  getOrderStatus: (orderId) => request(`/orders/${orderId}/status`),
+  getOrderStatus: (orderId) =>
+    request(`/orders/${orderId}/status`),
 
-  // Owner Auth
+  // Owner authentication
   login: (credentials) =>
     request('/auth/login', {
       method: 'POST',
@@ -88,12 +100,35 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  // Owner Orders
+  // Password recovery
+  forgotPassword: (data) =>
+    request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  setSecurityAnswers: (data) =>
+    request('/auth/security-answers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Owner orders
   getOrders: (params = {}) => {
     const query = new URLSearchParams();
-    if (params.status && params.status !== 'all') query.append('status', params.status);
-    if (params.search) query.append('search', params.search);
-    const queryString = query.toString() ? `?${query.toString()}` : '';
+
+    if (params.status && params.status !== 'all') {
+      query.append('status', params.status);
+    }
+
+    if (params.search) {
+      query.append('search', params.search);
+    }
+
+    const queryString = query.toString()
+      ? `?${query.toString()}`
+      : '';
+
     return request(`/owner/orders${queryString}`);
   },
 
@@ -110,10 +145,12 @@ export const api = {
 
   getStats: () => request('/owner/stats'),
 
-  downloadOrderFileUrl: (orderId) => `${API_BASE}/owner/orders/${orderId}/download`,
+  downloadOrderFileUrl: (orderId) =>
+    `${API_BASE}/owner/orders/${orderId}/download`,
 
-  // Settings
+  // Shop settings
   getSettings: () => request('/owner/settings'),
+
   updateSettings: (settingsData) =>
     request('/owner/settings', {
       method: 'PUT',
@@ -125,4 +162,3 @@ export const api = {
       method: 'POST',
     }),
 };
-
