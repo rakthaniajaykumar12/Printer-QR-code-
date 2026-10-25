@@ -1,6 +1,6 @@
 // API client with standard error handling and token management
 
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_URL || 'https://printer-qr-backend.onrender.com').replace(/\/+$/, '') + '/api';
 
 export function getAuthToken() {
   return localStorage.getItem('smart_xerox_token');
@@ -125,3 +125,4 @@ export const api = {
       method: 'POST',
     }),
 };
+
